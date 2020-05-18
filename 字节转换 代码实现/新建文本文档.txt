@@ -1,0 +1,41 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+
+#define bytes_size 1024
+
+char* BytesToSize(float Bytes) {
+	float kb = bytes_size;
+	float mb = bytes_size * kb;
+	float gb = bytes_size * mb;
+	float tb = bytes_size * gb;
+
+	char * returnSize = (char*)malloc(256);
+
+
+	if (Bytes >= tb)
+		sprintf(returnSize, "%.2f TB", (float)Bytes / tb);
+	else if (Bytes >= gb && Bytes < tb)
+		sprintf(returnSize, "%.2f GB", (float)Bytes / gb);
+	else if (Bytes >= mb && Bytes < gb)
+		sprintf(returnSize, "%.2f MB", (float)Bytes / mb);
+	else if (Bytes >= kb && Bytes < mb)
+		sprintf(returnSize, "%.2f KB", (float)Bytes / kb);
+	else if (Bytes < kb)
+		sprintf(returnSize, "%.2f Bytes", Bytes);
+	else
+		sprintf(returnSize, "%.2f Bytes", Bytes);
+
+
+	return returnSize;
+}
+
+void test02()
+{
+	//char * str = BytesToSize(3000);
+	char interface[256] = {0};
+	sprintf(interface, "%s", BytesToSize(63));
+	printf("bytes = %s\n", interface);
+	//free(str);
+}
