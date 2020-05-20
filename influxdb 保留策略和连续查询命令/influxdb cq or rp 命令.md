@@ -16,7 +16,7 @@ CREATE RETENTION POLICY "tfw_1d" on tfw_system DURATION 1d REPLICATION 1;  #非�
 ```shell
 CREATE RETENTION POLICY "telegraf_1h" on telegraf DURATION 1h REPLICATION 1 DEFAULT;
 CREATE RETENTION POLICY "telegraf_1d" on telegraf DURATION 1d REPLICATION 1;
-CREATE RETENTION POLICY "telegraf_90d" on telegraf DURATION 90d REPLICATION 1 DEFAULT;
+CREATE RETENTION POLICY "telegraf_90d" on telegraf DURATION 90d REPLICATION 1;
 ```
 
 # 连续查询
@@ -76,5 +76,22 @@ CREATE CONTINUOUS QUERY bl_protoc_10m ON telegraf BEGIN SELECT count(LOG_BL_dest
 
 ```shell
 CREATE CONTINUOUS QUERY bl_port_10m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_port FROM syslog GROUP BY time(10m),LOG_BL_src_port END  #10min 根据端口统计条数
+```
+
+#### 2.2.5	bl_entire
+
+```shell
+SELECT
+
+      LOG_BL_dest_city_id,  LOG_BL_src_city_id::field,   LOG_BL_dest_ip,   LOG_BL_id,   LOG_BL_dest_port,  LOG_BL_ip_type,  LOG_BL_protoc,  LOG_BL_src_ip,  LOG_BL_src_port::tag into   tfw_system.tfw_system_90d.entire_log 
+
+from 
+
+
+telegraf.telegraf_1h.syslog 
+
+
+group by
+       LOG_BL_dest_city_id, LOG_BL_src_city_id, LOG_BL_dest_ip, LOG_BL_id, LOG_BL_dest_port, LOG_BL_ip_type, LOG_BL_protoc, LOG_BL_src_ip, LOG_BL_src_port
 ```
 
