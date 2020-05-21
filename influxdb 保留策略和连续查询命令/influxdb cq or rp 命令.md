@@ -77,7 +77,7 @@ CREATE CONTINUOUS QUERY bl_protoc_10m ON telegraf BEGIN SELECT count(LOG_BL_dest
 CREATE CONTINUOUS QUERY bl_port_10m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_port FROM syslog GROUP BY time(10m),LOG_BL_src_port END   --10min 根据端口统计条数
 ```
 
-#### 2.2.5	bl_entire
+#### 2.2.5	bl_entire(非cq)
 
 ```sql
 SELECT
@@ -87,10 +87,7 @@ SELECT
 from 
 
 
-telegraf.telegraf_1h.syslog 
+telegraf.telegraf_1h.syslog   --降采样，默认策略中的数据插入到非默认策略中
 
-
-group by
-       LOG_BL_dest_city_id, LOG_BL_src_city_id, LOG_BL_dest_ip, LOG_BL_id, LOG_BL_dest_port, LOG_BL_ip_type, LOG_BL_protoc, LOG_BL_src_ip, LOG_BL_src_port
 ```
 
