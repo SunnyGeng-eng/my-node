@@ -51,13 +51,13 @@ CREATE CONTINUOUS QUERY cq_mem_30m ON tfw_system BEGIN SELECT mean(memory_rate) 
 #### 2.1.4	attack_trend
 
 ```sql
-CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".attack_trend FROM syslog GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_src_port,LOG_BL_protoc END
+CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".attack_trend FROM syslog GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_src_port,LOG_BL_protoc END  --根据src_ip,src_port,protoc统计次数 1min/次
 ```
 
 #### 2.1.5	asset_trend
 
 ```sql
-CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc END
+CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc END  --根据dest_ip,dest_ip,protoc统计次数 1min/次
 ```
 
 
