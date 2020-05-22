@@ -9,6 +9,7 @@ show retention policies on tfw_system   --连续查询结果
 drop retention POLICY "tfw_1d" ON "tfw_system"  --删除连续查询
 CREATE RETENTION POLICY "tfw_1h" on tfw_system DURATION 1h REPLICATION 1 DEFAULT;  --默认策略 1h
 CREATE RETENTION POLICY "tfw_1d" on tfw_system DURATION 1d REPLICATION 1;  --非默认策略 1d 
+CREATE RETENTION POLICY "tfw_90d" on tfw_system DURATION 1d REPLICATION 1;  --非默认策略 30d 
 ```
 
 ### 2	telegraf
@@ -51,13 +52,13 @@ CREATE CONTINUOUS QUERY cq_mem_30m ON tfw_system BEGIN SELECT mean(memory_rate) 
 #### 2.1.4	attack_trend
 
 ```sql
-CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".attack_trend FROM syslog GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_src_port,LOG_BL_protoc END  --根据src_ip,src_port,protoc统计次数 1min/次
+CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".attack_trend FROM syslog where LOG_BL_ip_type='1' GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_src_port,LOG_BL_protoc,LOG_BL_id END  --根据src_ip,src_port,protoc统计黑名单次数 1min/次
 ```
 
 #### 2.1.5	asset_trend
 
 ```sql
-CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc END  --根据dest_ip,dest_ip,protoc统计次数 1min/次
+CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog where LOG_BL_ip_type='1' GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc END  --根据dest_ip,dest_ip,protoc统计黑名单次数 1min/次
 ```
 
 
@@ -79,7 +80,7 @@ CREATE CONTINUOUS QUERY cpu_30m ON telegraf BEGIN SELECT mean(usage_user) as cpu
 #### 2.2.3	bl_protoc
 
 ```sql
-CREATE CONTINUOUS QUERY bl_protoc_10m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_protoc FROM syslog GROUP BY time(10m),LOG_BL_protoc END  --10min 统计协议条数
+CREATE CONTINUOUS QUERY bl_protoc_10m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_protoc FROM syslog where LOG_BL_protoc='6' or LOG_BL_protoc='17' GROUP BY time(10m),LOG_BL_protoc END  --10min 统计协议条数
 ```
 
 #### 2.2.4	bl_port
