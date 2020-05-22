@@ -29,24 +29,35 @@ DROP CONTINUOUS QUERY cq_15m ON tfw_system 	--删除
 SELECT * FROM tfw_system."tfw_1d".inter_30m  --查询非默认策略
 ```
 
-#### 2.11	inter_speed_count
+#### 2.1.1	inter_speed_count
 
 ```sql
 CREATE CONTINUOUS QUERY inter_speed_10m ON tfw_system BEGIN SELECT max(rx_kbytes) as rx_max,mean(rx_kbytes) as rx_mean,mean(rx_kbytes)*8/10 as rx_rate,max(tx_kbytes) as tx_max,mean(tx_kbytes) as tx_mean,mean(tx_kbytes)*8/10 as tx_rate INTO tfw_system."tfw_1d".inter_speed_count FROM interface GROUP BY time(10m),inter_name END    --10m 接口速率信息
 
 ```
 
-#### 2.12	inter_30m
+#### 2.1.2	inter_30m
 
 ```sql
 CREATE CONTINUOUS QUERY cq_30m ON tfw_system BEGIN SELECT mean(rx_kbps) as rx_kbps,mean(rx_mbps) as rx_mbps,mean(tx_kbps) as tx_kbps,mean(tx_mbps) as tx_mbps INTO tfw_system."tfw_1d".inter_30m FROM interface GROUP BY time(30m),inter_name END   --接口数据平均信息 半小时
-
 ```
 
-#### 2.13	mem_vpp_30m
+#### 2.1.3	mem_vpp_30m
 
 ```sql
 CREATE CONTINUOUS QUERY cq_mem_30m ON tfw_system BEGIN SELECT mean(memory_rate) as mem_mean INTO tfw_system."tfw_1d".mem_vpp_30m FROM system_info GROUP BY time(30m) END    --半小时内存使用率
+```
+
+#### 2.1.4	attack_trend
+
+```sql
+CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".attack_trend FROM syslog GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_src_port,LOG_BL_protoc END
+```
+
+#### 2.1.5	asset_trend
+
+```sql
+CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc END
 ```
 
 
