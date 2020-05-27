@@ -20,9 +20,18 @@ CREATE RETENTION POLICY "telegraf_1d" on telegraf DURATION 1d REPLICATION 1;
 CREATE RETENTION POLICY "telegraf_90d" on telegraf DURATION 90d REPLICATION 1;
 ```
 
-# 连续查询
+### 3	assets_info
 
-## 2.1	tfw_system
+```sql
+CREATE RETENTION POLICY "assets_1d" on "assets_info" DURATION 1d REPLICATION 1 DEFAULT;
+CREATE RETENTION POLICY "assets_180d" on "assets_info" DURATION 1d REPLICATION 1;
+```
+
+
+
+## 连续查询
+
+## 1	tfw_system
 
 ```sql
 SHOW CONTINUOUS QUERIES  --查询连续查询策略
@@ -30,32 +39,32 @@ DROP CONTINUOUS QUERY cq_15m ON tfw_system 	--删除
 SELECT * FROM tfw_system."tfw_1d".inter_30m  --查询非默认策略
 ```
 
-#### 2.1.1	inter_speed_count
+### 1.1	inter_speed_count
 
 ```sql
 CREATE CONTINUOUS QUERY inter_speed_10m ON tfw_system BEGIN SELECT max(rx_kbytes) as rx_max,mean(rx_kbytes) as rx_mean,mean(rx_kbytes)*8/10 as rx_rate,max(tx_kbytes) as tx_max,mean(tx_kbytes) as tx_mean,mean(tx_kbytes)*8/10 as tx_rate INTO tfw_system."tfw_1d".inter_speed_count FROM interface GROUP BY time(10m),inter_name END    --10m 接口速率信息
 
 ```
 
-#### 2.1.2	inter_30m
+### 1.2	inter_30m
 
 ```sql
 CREATE CONTINUOUS QUERY cq_30m ON tfw_system BEGIN SELECT mean(rx_kbps) as rx_kbps,mean(rx_mbps) as rx_mbps,mean(tx_kbps) as tx_kbps,mean(tx_mbps) as tx_mbps INTO tfw_system."tfw_1d".inter_30m FROM interface GROUP BY time(30m),inter_name END   --接口数据平均信息 半小时
 ```
 
-#### 2.1.3	mem_vpp_30m
+### 1.3	mem_vpp_30m
 
 ```sql
 CREATE CONTINUOUS QUERY cq_mem_30m ON tfw_system BEGIN SELECT mean(memory_rate) as mem_mean INTO tfw_system."tfw_1d".mem_vpp_30m FROM system_info GROUP BY time(30m) END    --半小时内存使用率
 ```
 
-#### 2.1.4	attack_trend
+### 1.4	attack_trend
 
 ```sql
 CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".attack_trend FROM syslog where LOG_BL_ip_type='1' GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_src_port,LOG_BL_protoc,LOG_BL_id END  --根据src_ip,src_port,protoc统计黑名单次数 1min/次
 ```
 
-#### 2.1.5	asset_trend
+### 1.5	asset_trend
 
 ```sql
 CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog where LOG_BL_ip_type='1' GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc,LOG_BL_id END  --根据dest_ip,dest_ip,protoc统计黑名单次数 1min/次
@@ -65,31 +74,31 @@ CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_des
 
 ## 2.	telegraf
 
-#### 2.2.1	bl_ip
+### 2.1	bl_ip
 
 ```sql
 CREATE CONTINUOUS QUERY bl_ip_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_ip FROM syslog GROUP BY time(1m),LOG_BL_src_ip,LOG_BL_id END  --根据src_ip 和 b_id 统计拦截次数
 ```
 
-#### 2.2.2	cpu_30m
+### 2.2	cpu_30m
 
 ```sql
 CREATE CONTINUOUS QUERY cpu_30m ON telegraf BEGIN SELECT mean(usage_user) as cpu_mean INTO telegraf."telegraf_1d".cpu_30m FROM cpu where cpu='cpu-total' GROUP BY time(30m),cpu END  --半小时cpu使用率
 ```
 
-#### 2.2.3	bl_protoc
+### 2.3	bl_protoc
 
 ```sql
 CREATE CONTINUOUS QUERY bl_protoc_10m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_protoc FROM syslog where LOG_BL_protoc='6' or LOG_BL_protoc='17' GROUP BY time(10m),LOG_BL_protoc END  --10min 统计协议条数
 ```
 
-#### 2.2.4	bl_port
+### 2.4	bl_port
 
 ```sql
 CREATE CONTINUOUS QUERY bl_port_10m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO telegraf."telegraf_1d".bl_port FROM syslog GROUP BY time(10m),LOG_BL_src_port END   --10min 根据端口统计条数
 ```
 
-#### 2.2.5	bl_entire(非cq)
+### 2.5	bl_entire(非cq)
 
 ```sql
 SELECT
@@ -101,5 +110,13 @@ from
 
 telegraf.telegraf_1h.syslog   --降采样，默认策略中的数据插入到非默认策略中
 
+```
+
+## 3.	assets_info
+
+### 3.1	assets_at_stat
+
+```sql
+CREATE CONTINUOUS QUERY "assets_sum_90d" ON "assets_info" BEGIN SELECT sum(*) INTO assets_info."assets_1d".assets_at_stat_sum FROM "assets_at_stat" GROUP BY time(1d),ips_at_ip END  --根据ip统计次数 1d
 ```
 
