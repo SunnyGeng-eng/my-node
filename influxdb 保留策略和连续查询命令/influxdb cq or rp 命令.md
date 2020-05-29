@@ -18,6 +18,7 @@ CREATE RETENTION POLICY "tfw_90d" on tfw_system DURATION 1d REPLICATION 1;  --�
 CREATE RETENTION POLICY "telegraf_1h" on telegraf DURATION 1h REPLICATION 1 DEFAULT;
 CREATE RETENTION POLICY "telegraf_1d" on telegraf DURATION 1d REPLICATION 1;
 CREATE RETENTION POLICY "telegraf_90d" on telegraf DURATION 90d REPLICATION 1;
+CREATE RETENTION POLICY "telegraf_30d" on telegraf DURATION 30d REPLICATION 1 DEFAULT; --暂定为1个月默认
 ```
 
 ### 3	assets_info
@@ -117,6 +118,7 @@ telegraf.telegraf_1h.syslog   --降采样，默认策略中的数据插入到非
 ### 3.1	assets_at_stat
 
 ```sql
-CREATE CONTINUOUS QUERY "assets_sum_90d" ON "assets_info" BEGIN SELECT sum(*) INTO assets_info."assets_1d".assets_at_stat_sum FROM "assets_at_stat" GROUP BY time(1d),ips_at_ip END  --根据ip统计次数 1d
+CREATE CONTINUOUS QUERY "assets_sum_180d" ON "assets_info" BEGIN SELECT sum(*) INTO assets_info."assets_180d".assets_at_stat_sum FROM "assets_at_stat" GROUP BY time(1d,8h),ips_at_ip END  --根据ip统计次数 1d
+CREATE CONTINUOUS QUERY "assets_sum_test" ON "assets_info" BEGIN SELECT sum(*) INTO assets_info."assets_180d".assets_at_stat_test FROM "assets_at_stat" GROUP BY time(10m,-2m),ips_at_ip END
 ```
 
