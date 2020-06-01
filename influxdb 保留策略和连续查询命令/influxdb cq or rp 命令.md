@@ -1,4 +1,4 @@
-# influxdb CQ or RP 命令
+#   influxdb CQ or RP 命令
 
 ## 保留策略
 
@@ -9,7 +9,7 @@ show retention policies on tfw_system   --连续查询结果
 drop retention POLICY "tfw_1d" ON "tfw_system"  --删除连续查询
 CREATE RETENTION POLICY "tfw_1h" on tfw_system DURATION 1h REPLICATION 1 DEFAULT;  --默认策略 1h
 CREATE RETENTION POLICY "tfw_1d" on tfw_system DURATION 1d REPLICATION 1;  --非默认策略 1d 
-CREATE RETENTION POLICY "tfw_90d" on tfw_system DURATION 1d REPLICATION 1;  --非默认策略 30d 
+CREATE RETENTION POLICY "tfw_90d" on tfw_system DURATION 90d REPLICATION 1;  --非默认策略 90d 
 ```
 
 ### 2	telegraf
@@ -18,14 +18,15 @@ CREATE RETENTION POLICY "tfw_90d" on tfw_system DURATION 1d REPLICATION 1;  --�
 CREATE RETENTION POLICY "telegraf_1h" on telegraf DURATION 1h REPLICATION 1 DEFAULT;
 CREATE RETENTION POLICY "telegraf_1d" on telegraf DURATION 1d REPLICATION 1;
 CREATE RETENTION POLICY "telegraf_90d" on telegraf DURATION 90d REPLICATION 1;
-CREATE RETENTION POLICY "telegraf_30d" on telegraf DURATION 30d REPLICATION 1 DEFAULT; --暂定为1个月默认
+CREATE RETENTION POLICY "telegraf_7d" on telegraf DURATION 7d REPLICATION 1 DEFAULT; --暂定为1个月默认
 ```
 
 ### 3	assets_info
 
 ```sql
 CREATE RETENTION POLICY "assets_1d" on "assets_info" DURATION 1d REPLICATION 1 DEFAULT;
-CREATE RETENTION POLICY "assets_180d" on "assets_info" DURATION 1d REPLICATION 1;
+CREATE RETENTION POLICY "assets_2d" on "assets_info" DURATION 2d REPLICATION 1 DEFAULT;
+CREATE RETENTION POLICY "assets_180d" on "assets_info" DURATION 180d REPLICATION 1;
 ```
 
 
@@ -44,7 +45,7 @@ SELECT * FROM tfw_system."tfw_1d".inter_30m  --查询非默认策略
 
 ```sql
 CREATE CONTINUOUS QUERY inter_speed_10m ON tfw_system BEGIN SELECT max(rx_kbytes) as rx_max,mean(rx_kbytes) as rx_mean,mean(rx_kbytes)*8/10 as rx_rate,max(tx_kbytes) as tx_max,mean(tx_kbytes) as tx_mean,mean(tx_kbytes)*8/10 as tx_rate INTO tfw_system."tfw_1d".inter_speed_count FROM interface GROUP BY time(10m),inter_name END    --10m 接口速率信息
-
+                  
 ```
 
 ### 1.2	inter_30m
@@ -57,6 +58,10 @@ CREATE CONTINUOUS QUERY cq_30m ON tfw_system BEGIN SELECT mean(rx_kbps) as rx_kb
 
 ```sql
 CREATE CONTINUOUS QUERY cq_mem_30m ON tfw_system BEGIN SELECT mean(memory_rate) as mem_mean INTO tfw_system."tfw_1d".mem_vpp_30m FROM system_info GROUP BY time(30m) END    --半小时内存使用率
+
+CREATE CONTINUOUS QUERY cq_mem_1d_5 ON tfw_system BEGIN SELECT mean(*) INTO tfw_system."tfw_90d".mem_vpp_5 FROM tfw_system."tfw_1h".system_info GROUP BY time(1d,5h) END 
+
+
 ```
 
 ### 1.4	attack_trend
@@ -85,6 +90,9 @@ CREATE CONTINUOUS QUERY bl_ip_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city
 
 ```sql
 CREATE CONTINUOUS QUERY cpu_30m ON telegraf BEGIN SELECT mean(usage_user) as cpu_mean INTO telegraf."telegraf_1d".cpu_30m FROM cpu where cpu='cpu-total' GROUP BY time(30m),cpu END  --半小时cpu使用率
+
+
+CREATE CONTINUOUS QUERY cpu_1d_test10_sum ON telegraf BEGIN SELECT mean(*) INTO telegraf."telegraf_90d".cpu_test10_sum FROM telegraf."telegraf_1h".cpu where cpu='cpu-total' GROUP BY time(1d,10h),cpu END 
 ```
 
 ### 2.3	bl_protoc
@@ -111,6 +119,14 @@ from
 
 telegraf.telegraf_1h.syslog   --降采样，默认策略中的数据插入到非默认策略中
 
+
+
+select *  from (SELECT
+     count(LOG_BL_src_ip_field) 
+from  syslog   where time > now()  -1d   and LOG_BL_ip_type = '1'  group by  LOG_BL_dest_city_id,  LOG_BL_src_city_id,   LOG_BL_dest_ip,   LOG_BL_id,   LOG_BL_dest_port,  LOG_BL_ip_type,  LOG_BL_protoc,  LOG_BL_src_ip,  LOG_BL_src_port)
+
+CREATE CONTINUOUS QUERY "bl_log_1m" on telegraf BEGIN SELECT * from (SELECT count(LOG_BL_src_ip_field) from syslog) INTO "tfw_system"."tfw_1d".bl_log_test from syslog where LOG_BL_ip_type='1' group by time(1m), LOG_BL_dest_city_id,LOG_BL_src_city_id,LOG_BL_dest_ip,LOG_BL_id,LOG_BL_dest_port,LOG_BL_ip_type,LOG_BL_protoc,LOG_BL_src_ip,LOG_BL_src_port
+
 ```
 
 ## 3.	assets_info
@@ -118,7 +134,39 @@ telegraf.telegraf_1h.syslog   --降采样，默认策略中的数据插入到非
 ### 3.1	assets_at_stat
 
 ```sql
-CREATE CONTINUOUS QUERY "assets_sum_180d" ON "assets_info" BEGIN SELECT sum(*) INTO assets_info."assets_180d".assets_at_stat_sum FROM "assets_at_stat" GROUP BY time(1d,8h),ips_at_ip END  --根据ip统计次数 1d
-CREATE CONTINUOUS QUERY "assets_sum_test" ON "assets_info" BEGIN SELECT sum(*) INTO assets_info."assets_180d".assets_at_stat_test FROM "assets_at_stat" GROUP BY time(10m,-2m),ips_at_ip END
+CREATE CONTINUOUS QUERY "assets_sum_180d" ON "assets_info" BEGIN SELECT sum(*) INTO "assets_info"."assets_180d".assets_at_stat_sum FROM "assets_info"."assets_2d"."assets_at_stat" GROUP BY time(24h,-8h),ips_at_ip END  --根据ip统计次数 1d
+
+CREATE CONTINUOUS QUERY "assets_sum_test10" ON "assets_info" BEGIN SELECT sum(*) INTO "assets_info"."assets_180d".assets_at_stat_test10 FROM "assets_info"."assets_2d"."assets_at_stat" GROUP BY time(24h,10h),ips_at_ip END
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
