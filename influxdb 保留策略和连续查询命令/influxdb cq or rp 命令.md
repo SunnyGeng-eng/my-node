@@ -75,10 +75,10 @@ CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_de
 CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog where LOG_BL_ip_type='1' GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc,LOG_BL_id END  --根据dest_ip,dest_ip,protoc统计黑名单次数 1min/次
 ```
 
-### 1.6	bl_city_count_stat
+### 1.6	bl_city_count
 
 ```sql
-CREATE CONTINUOUS QUERY bl_city_1m ON "tfw_system" BEGIN SELECT sum(count) as city_sum INTO "tfw_system"."tfw_1d".bl_city_count_stat FROM bl_city GROUP BY time(1m),city_id END  --统计攻击总数/min，保留1天
+CREATE CONTINUOUS QUERY bl_city_1m ON "tfw_system" BEGIN SELECT sum(count) as count INTO "tfw_system"."tfw_1d".bl_city_count FROM bl_city GROUP BY time(1m),city_id END  --统计攻击总数/min，保留1天
 ```
 
 
