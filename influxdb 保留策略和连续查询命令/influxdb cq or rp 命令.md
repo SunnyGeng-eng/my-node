@@ -18,7 +18,7 @@ CREATE RETENTION POLICY "tfw_90d" on tfw_system DURATION 90d REPLICATION 1;  --�
 CREATE RETENTION POLICY "telegraf_1h" on telegraf DURATION 1h REPLICATION 1 DEFAULT;
 CREATE RETENTION POLICY "telegraf_1d" on telegraf DURATION 1d REPLICATION 1;
 CREATE RETENTION POLICY "telegraf_90d" on telegraf DURATION 90d REPLICATION 1;
-CREATE RETENTION POLICY "telegraf_7d" on telegraf DURATION 7d REPLICATION 1 DEFAULT; --暂定为1个月默认
+CREATE RETENTION POLICY "telegraf_7d" on telegraf DURATION 1w REPLICATION 1 DEFAULT; --暂定为1周默认
 ```
 
 ### 3	assets_info
@@ -44,8 +44,7 @@ SELECT * FROM tfw_system."tfw_1d".inter_30m  --查询非默认策略
 ### 1.1	inter_speed_count
 
 ```sql
-CREATE CONTINUOUS QUERY inter_speed_10m ON tfw_system BEGIN SELECT max(rx_kbytes) as rx_max,mean(rx_kbytes) as rx_mean,mean(rx_kbytes)*8/10 as rx_rate,max(tx_kbytes) as tx_max,mean(tx_kbytes) as tx_mean,mean(tx_kbytes)*8/10 as tx_rate INTO tfw_system."tfw_1d".inter_speed_count FROM interface GROUP BY time(10m),inter_name END    --10m 接口速率信息
-                  
+CREATE CONTINUOUS QUERY inter_speed_10m ON tfw_system BEGIN SELECT max(rx_kbytes) as rx_max,mean(rx_kbytes) as rx_mean,mean(rx_kbytes)*8/10 as rx_rate,max(tx_kbytes) as tx_max,mean(tx_kbytes) as tx_mean,mean(tx_kbytes)*8/10 as tx_rate INTO tfw_system."tfw_1d".inter_speed_count FROM interface GROUP BY time(10m),inter_name END    --10m 接口速率信息                  
 ```
 
 ### 1.2	inter_30m
@@ -74,6 +73,12 @@ CREATE CONTINUOUS QUERY attack_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_de
 
 ```sql
 CREATE CONTINUOUS QUERY asset_trend_1m ON telegraf BEGIN SELECT count(LOG_BL_dest_city_id) INTO tfw_system."tfw_1d".asset_trend FROM syslog where LOG_BL_ip_type='1' GROUP BY time(1m),LOG_BL_dest_ip,LOG_BL_dest_port,LOG_BL_protoc,LOG_BL_id END  --根据dest_ip,dest_ip,protoc统计黑名单次数 1min/次
+```
+
+### 1.6	bl_city_count_stat
+
+```sql
+CREATE CONTINUOUS QUERY bl_city_1m ON "tfw_system" BEGIN SELECT sum(count) as city_sum INTO "tfw_system"."tfw_1d".bl_city_count_stat FROM bl_city GROUP BY time(1m),city_id END  --统计攻击总数/min，保留1天
 ```
 
 
